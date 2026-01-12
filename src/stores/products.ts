@@ -4,12 +4,10 @@ import type { Product } from '../types/product'
 import { fetchProducts as fetchProductsApi } from '../services/products'
 
 export const useProductsStore = defineStore('products', () => {
-  // State
   const products = ref<Product[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  // Actions
   async function fetchProducts() {
     loading.value = true
     error.value = null
@@ -35,12 +33,20 @@ export const useProductsStore = defineStore('products', () => {
     }
   }
 
+  function reduceStock(productId: number, quantity: number) {
+    const product = products.value.find(p => p.id === productId)
+    if (product && product.stock >= quantity) {
+      product.stock -= quantity
+    }
+  }
+
   return {
     products,
     loading,
     error,
     fetchProducts,
     clearError,
-    updateProduct
+    updateProduct,
+    reduceStock
   }
 })
