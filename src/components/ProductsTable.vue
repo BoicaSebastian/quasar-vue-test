@@ -1,0 +1,271 @@
+<script setup lang="ts">
+import { onMounted, ref } from 'vue'
+import { useProductsStore } from '../stores/products'
+import type { QTableColumn } from 'quasar'
+import type { Product } from '../types/product'
+
+const productsStore = useProductsStore()
+
+// Edit dialog state
+const showEditDialog = ref(false)
+const editingProduct = ref<Product | null>(null)
+
+const columns: QTableColumn<Product>[] = [
+  {
+    name: 'id',
+    label: 'ID',
+    field: 'id',
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'thumbnail',
+    label: 'Image',
+    field: 'thumbnail',
+    align: 'center'
+  },
+  {
+    name: 'productName',
+    label: 'Product Name',
+    field: 'productName',
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'description',
+    label: 'Description',
+    field: 'description',
+    align: 'left'
+  },
+  {
+    name: 'category',
+    label: 'Category',
+    field: 'category',
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'price',
+    label: 'Price',
+    field: 'price',
+    sortable: true,
+    align: 'right',
+    format: (val: number) => `$${val.toFixed(2)}`
+  },
+  {
+    name: 'stock',
+    label: 'Stock',
+    field: 'stock',
+    sortable: true,
+    align: 'center'
+  },
+  {
+    name: 'manufacturer',
+    label: 'Manufacturer',
+    field: 'manufacturer',
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'sku',
+    label: 'SKU',
+    field: 'sku',
+    sortable: true,
+    align: 'left'
+  },
+  {
+    name: 'actions',
+    label: 'Actions',
+    field: () => 'actions',
+    align: 'center'
+  }
+]
+
+// Edit dialog methods
+function openEditDialog(product: Product) {
+  editingProduct.value = { ...product }
+  showEditDialog.value = true
+}
+
+function closeDialog() {
+  showEditDialog.value = false
+  editingProduct.value = null
+}
+
+function saveProduct() {
+  if (editingProduct.value) {
+    productsStore.updateProduct(editingProduct.value)
+    closeDialog()
+  }
+}
+
+onMounted(() => {
+  productsStore.fetchProducts()
+})
+</script>
+
+<template>
+  <div class="q-pa-md">
+    <div class="text-h4 q-mb-lg text-center">Our Products</div>
+
+    <div v-if="productsStore.error" class="q-mb-md">
+      <q-banner class="bg-negative text-white">
+        <template v-slot:avatar>
+          <q-icon name="error" />
+        </template>
+        Error loading products: {{ productsStore.error }}
+        <template v-slot:action>
+          <q-btn
+            flat
+            label="Retry"
+            @click="productsStore.fetchProducts()"
+          />
+        </template>
+      </q-banner>
+    </div>
+
+    <q-table
+      :rows="productsStore.products"
+      :columns="columns"
+      row-key="id"
+      :loading="productsStore.loading"
+      :pagination="{ rowsPerPage: 10 }"
+      flat
+      bordered
+    >
+      <template v-slot:body-cell-thumbnail="props">
+        <q-td :props="props">
+          <q-avatar square size="60px">
+            <img :src="props.row.thumbnail" :alt="props.row.productName" />
+          </q-avatar>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-stock="props">
+        <q-td :props="props">
+          <q-badge
+            :color="props.row.stock > 10 ? 'positive' : props.row.stock > 0 ? 'warning' : 'negative'"
+          >
+            {{ props.row.stock }} units
+          </q-badge>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-actions="props">
+        <q-td :props="props">
+          <div class="q-gutter-sm">
+            <q-btn
+              flat
+              dense
+              round
+              color="primary"
+              icon="shopping_cart"
+              :disable="props.row.stock === 0"
+              @click="console.log('Add to cart:', props.row.id)"
+            >
+              <q-tooltip>Add to Cart</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              dense
+              round
+              color="secondary"
+              icon="edit"
+              @click="openEditDialog(props.row)"
+            >
+              <q-tooltip>Edit Product</q-tooltip>
+            </q-btn>
+          </div>
+        </q-td>
+      </template>
+
+      <template v-slot:no-data>
+        <div class="full-width row flex-center q-gutter-sm q-pa-lg">
+          <q-icon name="inventory_2" size="2em" color="grey-5" />
+          <span class="text-grey-7">No products available</span>
+        </div>
+      </template>
+    </q-table>
+
+    <!-- Edit Product Dialog -->
+    <q-dialog v-model="showEditDialog">
+      <q-card style="min-width: 500px">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Edit Product</div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="closeDialog" />
+        </q-card-section>
+
+        <q-card-section v-if="editingProduct">
+          <!-- Product Image (Read-only for reference) -->
+          <div class="flex flex-center q-mb-md">
+            <q-avatar size="100px" square>
+              <img :src="editingProduct.thumbnail" :alt="editingProduct.productName" />
+            </q-avatar>
+          </div>
+
+          <!-- Editable Form Fields -->
+          <q-form @submit="saveProduct" class="q-gutter-md">
+            <q-input
+              v-model="editingProduct.productName"
+              label="Product Name"
+              filled
+              :rules="[val => !!val || 'Product name is required']"
+            />
+
+            <q-input
+              v-model="editingProduct.description"
+              label="Description"
+              filled
+              type="textarea"
+              rows="3"
+            />
+
+            <q-input
+              v-model="editingProduct.category"
+              label="Category"
+              filled
+            />
+
+            <q-input
+              v-model.number="editingProduct.price"
+              label="Price"
+              filled
+              type="number"
+              step="0.01"
+              prefix="$"
+              :rules="[val => val >= 0 || 'Price must be positive']"
+            />
+
+            <q-input
+              v-model.number="editingProduct.stock"
+              label="Stock"
+              filled
+              type="number"
+              suffix="units"
+              :rules="[val => val >= 0 || 'Stock must be positive']"
+            />
+
+            <q-input
+              v-model="editingProduct.manufacturer"
+              label="Manufacturer"
+              filled
+            />
+
+            <q-input
+              v-model.number="editingProduct.sku"
+              label="SKU"
+              filled
+              type="number"
+            />
+
+            <q-card-actions align="right">
+              <q-btn flat label="Cancel" color="grey" @click="closeDialog" />
+              <q-btn flat label="Save" color="primary" type="submit" />
+            </q-card-actions>
+          </q-form>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+  </div>
+</template>
