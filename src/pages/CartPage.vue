@@ -1,0 +1,108 @@
+<script setup lang="ts">
+import { useCartStore } from '../stores/cart'
+import type { QTableColumn } from 'quasar'
+import type { CartItem } from '../types/cart'
+
+const cartStore = useCartStore()
+
+const columns: QTableColumn<CartItem>[] = [
+  {
+    name: 'thumbnail',
+    label: 'Image',
+    field: (row) => row.product.thumbnail,
+    align: 'center'
+  },
+  {
+    name: 'productName',
+    label: 'Product',
+    field: (row) => row.product.productName,
+    align: 'left'
+  },
+  {
+    name: 'price',
+    label: 'Price',
+    field: (row) => row.product.price,
+    align: 'right',
+    format: (val: number) => `$${val.toFixed(2)}`
+  },
+  {
+    name: 'quantity',
+    label: 'Quantity',
+    field: 'quantity',
+    align: 'center'
+  },
+  {
+    name: 'subtotal',
+    label: 'Subtotal',
+    field: (row) => row.product.price * row.quantity,
+    align: 'right',
+    format: (val: number) => `$${val.toFixed(2)}`
+  },
+  {
+    name: 'actions',
+    label: 'Actions',
+    field: () => 'actions',
+    align: 'center'
+  }
+]
+</script>
+
+<template>
+  <div class="q-pa-md">
+    <div class="text-h4 q-mb-lg text-center">Shopping Cart</div>
+
+    <q-table
+      v-if="cartStore.items.length > 0"
+      :rows="cartStore.items"
+      :columns="columns"
+      row-key="product.id"
+      flat
+      bordered
+      hide-pagination
+      :rows-per-page-options="[0]"
+    >
+      <template v-slot:body-cell-thumbnail="props">
+        <q-td :props="props">
+          <q-avatar square size="60px">
+            <img :src="props.row.product.thumbnail" :alt="props.row.product.productName" />
+          </q-avatar>
+        </q-td>
+      </template>
+
+      <template v-slot:body-cell-actions="props">
+        <q-td :props="props">
+          <q-btn
+            flat
+            dense
+            round
+            color="negative"
+            icon="delete"
+            @click="cartStore.removeFromCart(props.row.product.id)"
+          >
+            <q-tooltip>Remove from cart</q-tooltip>
+          </q-btn>
+        </q-td>
+      </template>
+    </q-table>
+
+    <div v-if="cartStore.items.length > 0" class="q-mt-md q-pa-md bg-grey-2 rounded-borders">
+      <div class="row justify-end">
+        <div class="text-h5 text-weight-bold">
+          Total: ${{ cartStore.cartTotal.toFixed(2) }}
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="text-center q-pa-xl">
+      <q-icon name="shopping_cart" size="4em" color="grey-5" />
+      <div class="text-h6 q-mt-md text-grey-7">Your cart is empty</div>
+      <q-btn
+        flat
+        color="primary"
+        label="Continue Shopping"
+        class="q-mt-md"
+        to="/"
+      />
+    </div>
+  </div>
+</template>

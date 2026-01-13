@@ -7,7 +7,7 @@ export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
 
   const cartCount = computed(() => {
-    return items.value.reduce((total, item) => total + item.quantity, 0)
+    return items.value.length
   })
 
   const cartTotal = computed(() => {
@@ -27,10 +27,17 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  function removeFromCart(productId: number) {
+    items.value = items.value.filter(item => item.product.id !== productId)
+  }
+
   return {
     items,
     cartCount,
     cartTotal,
-    addToCart
+    addToCart,
+    removeFromCart
   }
+}, {
+  persist: true
 })
