@@ -68,16 +68,18 @@ const columns: QTableColumn<CartItem>[] = [
   <div class="q-pa-md">
     <div class="text-h4 q-mb-lg text-center">Shopping Cart</div>
 
-    <q-table
-      v-if="cartStore.items.length > 0"
-      :rows="cartStore.items"
-      :columns="columns"
-      row-key="product.id"
-      flat
-      bordered
-      hide-pagination
-      :rows-per-page-options="[0]"
-    >
+    <div class="table-wrapper">
+      <q-table
+        v-if="cartStore.items.length > 0"
+        :rows="cartStore.items"
+        :columns="columns"
+        row-key="product.id"
+        flat
+        bordered
+        hide-pagination
+        :rows-per-page-options="[0]"
+        class="cart-table"
+      >
       <template v-slot:body-cell-thumbnail="props">
         <q-td :props="props">
           <q-avatar square size="60px">
@@ -100,7 +102,8 @@ const columns: QTableColumn<CartItem>[] = [
           </q-btn>
         </q-td>
       </template>
-    </q-table>
+      </q-table>
+    </div>
 
     <div v-if="cartStore.items.length > 0" class="q-mt-md q-pa-md bg-grey-2 rounded-borders">
       <div class="row justify-end">
@@ -123,3 +126,44 @@ const columns: QTableColumn<CartItem>[] = [
     </div>
   </div>
 </template>
+
+<style scoped>
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.cart-table {
+  width: 100%;
+  display: table;
+}
+
+@media (max-width: 599px) {
+  .table-wrapper {
+    overflow-x: scroll;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    width: calc(100vw - 32px);
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 0 16px;
+  }
+  
+  .cart-table {
+    min-width: 650px;
+    width: 100%;
+  }
+  
+  .cart-table :deep(.q-table__container) {
+    min-width: 650px;
+  }
+  
+  .cart-table :deep(.q-table) {
+    min-width: 650px;
+  }
+}
+</style>

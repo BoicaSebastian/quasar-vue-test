@@ -176,15 +176,17 @@ onMounted(() => {
       </q-banner>
     </div>
 
-    <q-table
-      :rows="productsStore.products"
-      :columns="columns"
-      row-key="id"
-      :loading="productsStore.loading"
-      :pagination="{ rowsPerPage: 10 }"
-      flat
-      bordered
-    >
+    <div class="table-wrapper">
+      <q-table
+        :rows="productsStore.products"
+        :columns="columns"
+        row-key="id"
+        :loading="productsStore.loading"
+        :pagination="{ rowsPerPage: 10 }"
+        flat
+        bordered
+        class="products-table"
+      >
       <template v-slot:body-cell-thumbnail="props">
         <q-td :props="props">
           <q-avatar square size="60px">
@@ -237,7 +239,8 @@ onMounted(() => {
           <span class="text-grey-7">No products available</span>
         </div>
       </template>
-    </q-table>
+      </q-table>
+    </div>
 
     <!-- Edit Product Dialog -->
     <q-dialog v-model="showEditDialog">
@@ -366,3 +369,52 @@ onMounted(() => {
     </q-dialog>
   </div>
 </template>
+
+<style scoped>
+.responsive-modal {
+  margin: 0 auto;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+.products-table {
+  width: 100%;
+  display: table;
+}
+
+@media (max-width: 599px) {
+  .responsive-modal {
+    margin: 1rem;
+  }
+  
+  .table-wrapper {
+    overflow-x: scroll;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    width: calc(100vw - 32px);
+    margin-left: -16px;
+    margin-right: -16px;
+    padding: 0 16px;
+  }
+  
+  .products-table {
+    min-width: 900px;
+    width: 100%;
+  }
+  
+  .products-table :deep(.q-table__container) {
+    min-width: 900px;
+  }
+  
+  .products-table :deep(.q-table) {
+    min-width: 900px;
+  }
+}
+</style>
