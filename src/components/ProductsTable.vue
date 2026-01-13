@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useProductsStore } from '../stores/products'
+import { useCartStore } from '../stores/cart'
 import type { QTableColumn } from 'quasar'
 import type { Product } from '../types/product'
 
 const productsStore = useProductsStore()
+const cartStore = useCartStore()
 
-// Edit dialog state
 const showEditDialog = ref(false)
 const editingProduct = ref<Product | null>(null)
+
+const showQuantityDialog = ref(false)
+const selectedProduct = ref<Product | null>(null)
+const selectedQuantity = ref(1)
 
 const columns: QTableColumn<Product>[] = [
   {
@@ -81,21 +86,40 @@ const columns: QTableColumn<Product>[] = [
   }
 ]
 
-// Edit dialog methods
-function openEditDialog(product: Product) {
+const openEditDialog = (product: Product) => {
   editingProduct.value = { ...product }
   showEditDialog.value = true
 }
 
-function closeDialog() {
+const closeDialog = () => {
   showEditDialog.value = false
   editingProduct.value = null
 }
 
-function saveProduct() {
+const saveProduct = () => {
   if (editingProduct.value) {
     productsStore.updateProduct(editingProduct.value)
     closeDialog()
+  }
+}
+
+const openQuantityDialog = (product: Product) => {
+  selectedProduct.value = product
+  selectedQuantity.value = 1
+  showQuantityDialog.value = true
+}
+
+const closeQuantityDialog = () => {
+  showQuantityDialog.value = false
+  selectedProduct.value = null
+  selectedQuantity.value = 1
+}
+
+const confirmAddToCart = () => {
+  if (selectedProduct.value && selectedQuantity.value > 0 && selectedQuantity.value <= selectedProduct.value.stock) {
+    cartStore.addToCart(selectedProduct.value, selectedQuantity.value)
+    productsStore.reduceStock(selectedProduct.value.id, selectedQuantity.value)
+    closeQuantityDialog()
   }
 }
 
@@ -161,7 +185,7 @@ onMounted(() => {
               color="primary"
               icon="shopping_cart"
               :disable="props.row.stock === 0"
-              @click="console.log('Add to cart:', props.row.id)"
+              @click="openQuantityDialog(props.row)"
             >
               <q-tooltip>Add to Cart</q-tooltip>
             </q-btn>
@@ -265,6 +289,51 @@ onMounted(() => {
             </q-card-actions>
           </q-form>
         </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- Quantity Selection Dialog -->
+    <q-dialog v-model="showQuantityDialog">
+      <q-card style="min-width: 400px">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Add to Cart</div>
+          <q-space />
+          <q-btn icon="close" flat round dense @click="closeQuantityDialog" />
+        </q-card-section>
+
+        <q-card-section v-if="selectedProduct">
+          <div class="text-subtitle1 q-mb-md">{{ selectedProduct.productName }}</div>
+          <div class="text-body2 text-grey-7 q-mb-md">
+            Available stock:
+            <q-badge :color="selectedProduct.stock > 10 ? 'positive' : selectedProduct.stock > 0 ? 'warning' : 'negative'">
+              {{ selectedProduct.stock }} units
+            </q-badge>
+          </div>
+
+          <q-input
+            v-model.number="selectedQuantity"
+            label="Quantity"
+            type="number"
+            filled
+            :min="1"
+            :max="selectedProduct.stock"
+            :rules="[
+              val => val > 0 || 'Quantity must be greater than 0',
+              val => !selectedProduct || val <= selectedProduct.stock || `Cannot exceed available stock (${selectedProduct.stock})`
+            ]"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Cancel" color="grey" @click="closeQuantityDialog" />
+          <q-btn
+            flat
+            label="Add to Cart"
+            color="primary"
+            :disable="!selectedProduct || selectedQuantity <= 0 || selectedQuantity > selectedProduct.stock"
+            @click="confirmAddToCart"
+          />
+        </q-card-actions>
       </q-card>
     </q-dialog>
   </div>

@@ -9,6 +9,10 @@ export const useProductsStore = defineStore('products', () => {
   const error = ref<string | null>(null)
 
   async function fetchProducts() {
+    if (products.value.length > 0) {
+      return
+    }
+
     loading.value = true
     error.value = null
 
@@ -49,4 +53,6 @@ export const useProductsStore = defineStore('products', () => {
     updateProduct,
     reduceStock
   }
+}, {
+  persist: true
 })
