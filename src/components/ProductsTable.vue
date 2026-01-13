@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useProductsStore } from '../stores/products'
 import { useCartStore } from '../stores/cart'
+import { toast } from 'vue3-toastify'
 import type { QTableColumn } from 'quasar'
 import type { Product } from '../types/product'
 
@@ -98,8 +99,21 @@ const closeDialog = () => {
 
 const saveProduct = () => {
   if (editingProduct.value) {
-    productsStore.updateProduct(editingProduct.value)
-    closeDialog()
+    try {
+      const productExists = productsStore.products.find(p => p.id === editingProduct.value?.id)
+      if (productExists) {
+        productsStore.updateProduct(editingProduct.value)
+        toast.success('Product updated successfully!')
+        closeDialog()
+      } else {
+        toast.error('Product not found!')
+      }
+    } catch (error) {
+      toast.error('Failed to update product')
+      console.error('Error updating product:', error)
+    }
+  } else {
+    toast.error('No product to update')
   }
 }
 
@@ -117,9 +131,23 @@ const closeQuantityDialog = () => {
 
 const confirmAddToCart = () => {
   if (selectedProduct.value && selectedQuantity.value > 0 && selectedQuantity.value <= selectedProduct.value.stock) {
-    cartStore.addToCart(selectedProduct.value, selectedQuantity.value)
-    productsStore.reduceStock(selectedProduct.value.id, selectedQuantity.value)
-    closeQuantityDialog()
+    try {
+      cartStore.addToCart(selectedProduct.value, selectedQuantity.value)
+      productsStore.reduceStock(selectedProduct.value.id, selectedQuantity.value)
+      toast.success(`${selectedProduct.value.productName} (${selectedQuantity.value}x) added to cart!`)
+      closeQuantityDialog()
+    } catch (error) {
+      toast.error('Failed to add product to cart')
+      console.error('Error adding to cart:', error)
+    }
+  } else {
+    if (!selectedProduct.value) {
+      toast.error('No product selected')
+    } else if (selectedQuantity.value <= 0) {
+      toast.error('Quantity must be greater than 0')
+    } else if (selectedQuantity.value > selectedProduct.value.stock) {
+      toast.error('Insufficient stock available')
+    }
   }
 }
 

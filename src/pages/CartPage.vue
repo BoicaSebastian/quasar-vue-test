@@ -1,9 +1,26 @@
 <script setup lang="ts">
 import { useCartStore } from '../stores/cart'
+import { toast } from 'vue3-toastify'
 import type { QTableColumn } from 'quasar'
 import type { CartItem } from '../types/cart'
 
 const cartStore = useCartStore()
+
+const handleRemoveFromCart = (productId: number) => {
+  try {
+    const cartItem = cartStore.items.find(item => item.product.id === productId)
+    if (cartItem) {
+      const productName = cartItem.product.productName
+      cartStore.removeFromCart(productId)
+      toast.success(`${productName} removed from cart`)
+    } else {
+      toast.error('Product not found in cart')
+    }
+  } catch (error) {
+    toast.error('Failed to remove product from cart')
+    console.error('Error removing from cart:', error)
+  }
+}
 
 const columns: QTableColumn<CartItem>[] = [
   {
@@ -77,7 +94,7 @@ const columns: QTableColumn<CartItem>[] = [
             round
             color="negative"
             icon="delete"
-            @click="cartStore.removeFromCart(props.row.product.id)"
+            @click="handleRemoveFromCart(props.row.product.id)"
           >
             <q-tooltip>Remove from cart</q-tooltip>
           </q-btn>
